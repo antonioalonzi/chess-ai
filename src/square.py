@@ -25,3 +25,7 @@ class Square:
     @staticmethod
     def in_range(x, y=0):
         return 0 <= x < ROWS and 0 <= y < COLS
+
+    def __eq__(self, other):
+        return self.row == other.row and self.col == other.col
+

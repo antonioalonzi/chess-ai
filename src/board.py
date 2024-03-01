@@ -7,10 +7,10 @@ from move import *
 class Board:
     def __init__(self):
         self.squares = []
-
         self._create()
         self._add_pieces('white')
         self._add_pieces('black')
+        self.last_move = None
 
     def _create(self):
         self.squares = [[0, 0, 0, 0, 0, 0, 0, 0] for _ in range(COLS)]
@@ -37,6 +37,16 @@ class Board:
         self.squares[row_other][3] = Square(row_other, 3, Queen(color))
 
         self.squares[row_other][4] = Square(row_other, 4, King(color))
+
+    def move(self, piece, move):
+        self.squares[move.initial.row][move.initial.col].piece = None
+        self.squares[move.final.row][move.final.col].piece = piece
+        piece.moved = True
+        piece.clear_moves()
+        self.last_move = move
+
+    def valid_moves(self, piece, move):
+        return move in piece.moves
 
     def calc_moves(self, piece, row, col):
         def pawn_moves(piece, row, col):
@@ -89,7 +99,7 @@ class Board:
                         move = Move(initial, final)
                         piece.add_move(move)
 
-        def straightline_moves(incrs):
+        def straightline_moves(piece, row, col, incrs):
             for incr in incrs:
                 possible_move_row = row + incr[0]
                 possible_move_col = col + incr[1]
@@ -110,17 +120,17 @@ class Board:
                     else:
                         break
 
-                    possible_move_row = row + incr[0]
-                    possible_move_col = col + incr[1]
+                    possible_move_row += incr[0]
+                    possible_move_col += incr[1]
 
         def bishop_moves(piece, row, col):
-            straightline_moves([(-1, +1), (-1, -1), (+1, +1), (+1, -1)])
+            straightline_moves(piece, row, col, [(-1, +1), (-1, -1), (+1, +1), (+1, -1)])
 
         def rook_moves(piece, row, col):
-            straightline_moves([(-1, 0), (+1, 0), (0, +1), (0, -1)])
+            straightline_moves(piece, row, col, [(-1, 0), (+1, 0), (0, +1), (0, -1)])
 
         def queen_moves(piece, row, col):
-            straightline_moves([(-1, 0), (+1, 0), (0, +1), (0, -1), (-1, +1), (-1, -1), (+1, +1), (+1, -1)])
+            straightline_moves(piece, row, col, [(-1, 0), (+1, 0), (0, +1), (0, -1), (-1, +1), (-1, -1), (+1, +1), (+1, -1)])
 
         def king_moves(piece, row, col):
             adjs = [
