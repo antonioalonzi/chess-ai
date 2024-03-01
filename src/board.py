@@ -40,7 +40,34 @@ class Board:
 
     def calc_moves(self, piece, row, col):
         def pawn_moves(piece, row, col):
-            pass
+            steps = 1 if piece.moved else 2
+
+            start = row + piece.dir
+            end = row + (piece.dir * (steps + 1))
+
+            for possible_move_row in range(start, end, piece.dir):
+                if Square.in_range(possible_move_row):
+                    if self.squares[possible_move_row][col].is_empty():
+                        initial = Square(row, col)
+                        final = Square(possible_move_row, col)
+                        move = Move(initial, final)
+                        piece.add_move(move)
+                    else:
+                        break
+                else:
+                    break
+
+            possible_move_row = row + piece.dir
+            possible_move_cols = [col -1, col + 1]
+            for possible_move_col in possible_move_cols:
+                if Square.in_range(possible_move_row, possible_move_col):
+                    if self.squares[possible_move_row][possible_move_col].has_enemy_piece(piece.color):
+                        initial = Square(row, col)
+                        final = Square(possible_move_row, possible_move_col)
+                        move = Move(initial, final)
+                        piece.add_move(move)
+
+            # TODO on passant
 
         def knight_moves(piece, row, col):
             possible_moves = [
@@ -56,34 +83,76 @@ class Board:
 
             for possible_move in possible_moves:
                 if Square.in_range(possible_move[0], possible_move[1]):
-                    print(possible_move)
-                    if self.squares[possible_move[0]][possible_move[1]].is_empty_or_rival(piece.color):
+                    if self.squares[possible_move[0]][possible_move[1]].is_empty_or_enemy(piece.color):
                         initial = Square(row, col)
                         final = Square(possible_move[0], possible_move[1])
                         move = Move(initial, final)
                         piece.add_move(move)
 
+        def straightline_moves(incrs):
+            for incr in incrs:
+                possible_move_row = row + incr[0]
+                possible_move_col = col + incr[1]
+
+                while True:
+                    if Square.in_range(possible_move_row, possible_move_col):
+                        initial = Square(row, col)
+                        final = Square(possible_move_row, possible_move_col)
+                        move = Move(initial, final)
+
+                        if self.squares[possible_move_row][possible_move_col].is_empty():
+                            piece.add_move(move)
+                        elif self.squares[possible_move_row][possible_move_col].has_enemy_piece(piece.color):
+                            piece.add_move(move)
+                            break
+                        elif self.squares[possible_move_row][possible_move_col].has_team_piece(piece.color):
+                            break
+                    else:
+                        break
+
+                    possible_move_row = row + incr[0]
+                    possible_move_col = col + incr[1]
+
         def bishop_moves(piece, row, col):
-            pass
+            straightline_moves([(-1, +1), (-1, -1), (+1, +1), (+1, -1)])
 
         def rook_moves(piece, row, col):
-            pass
+            straightline_moves([(-1, 0), (+1, 0), (0, +1), (0, -1)])
 
         def queen_moves(piece, row, col):
-            pass
+            straightline_moves([(-1, 0), (+1, 0), (0, +1), (0, -1), (-1, +1), (-1, -1), (+1, +1), (+1, -1)])
 
         def king_moves(piece, row, col):
-            pass
+            adjs = [
+                (row-1, col-1),
+                (row-1, col),
+                (row-1, col+1),
+                (row, col-1),
+                (row, col+1),
+                (row+1, col-1),
+                (row+1, col),
+                (row+1, col+1)
+            ]
+
+            for possible_move in adjs:
+                if Square.in_range(possible_move[0], possible_move[1]):
+                    if self.squares[possible_move[0]][possible_move[1]].is_empty_or_enemy(piece.color):
+                        initial = Square(row, col)
+                        final = Square(possible_move[0], possible_move[1])
+                        move = Move(initial, final)
+                        piece.add_move(move)
+
+            # TODO castling
 
         if piece.name == 'pawn':
-            return pawn_moves(piece, row, col)
+            pawn_moves(piece, row, col)
         elif piece.name == 'knight':
-            return knight_moves(piece, row, col)
+            knight_moves(piece, row, col)
         elif piece.name == 'bishop':
-            return bishop_moves(piece, row, col)
+            bishop_moves(piece, row, col)
         elif piece.name == 'rook':
-            return rook_moves(piece, row, col)
+            rook_moves(piece, row, col)
         elif piece.name == 'queen':
-            return queen_moves(piece, row, col)
+            queen_moves(piece, row, col)
         elif piece.name == 'king':
-            return king_moves(piece, row, col)
+            king_moves(piece, row, col)
