@@ -42,11 +42,24 @@ class Board:
         self.squares[move.initial.row][move.initial.col].piece = None
         self.squares[move.final.row][move.final.col].piece = piece
         piece.moved = True
+        if piece.name == 'pawn':
+            self.check_promotion(piece, move.final)
+        if piece.name == 'king' and self.castling(move.initial, move.final):
+            diff = move.final.col - move.initial.col
+            rook = piece.left_rook if diff < 0 else piece.right_rook
+            self.move(rook, rook.moves[-1])
         piece.clear_moves()
         self.last_move = move
 
     def valid_moves(self, piece, move):
         return move in piece.moves
+
+    def check_promotion(self, piece, final):
+        if final.row == 0 or final.row == 7:
+            self.squares[final.row][final.col].piece = Queen(piece.color)
+
+    def castling(self, initial, final):
+        return abs(initial.col - final.col) == 2
 
     def calc_moves(self, piece, row, col):
         def pawn_moves(piece, row, col):
@@ -152,7 +165,36 @@ class Board:
                         move = Move(initial, final)
                         piece.add_move(move)
 
-            # TODO castling
+            if not piece.moved:
+                left_rook = self.squares[row][0].piece
+                right_rook = self.squares[row][0].piece
+                if left_rook.name == 'rook' and not left_rook.moved:
+                    if self.squares[row][1].is_empty() and self.squares[row][2].is_empty() and self.squares[row][3].is_empty():
+                        piece.left_rook = left_rook
+                        initial = Square(row, 0)
+                        final = Square(row, 3)
+                        move = Move(initial, final)
+                        left_rook.add_move(move)
+
+                        piece.left_rook = left_rook
+                        initial = Square(row, col)
+                        final = Square(row, 2)
+                        move = Move(initial, final)
+                        piece.add_move(move)
+
+                if right_rook.name == 'rook' and not right_rook.moved:
+                    if self.squares[row][5].is_empty() and self.squares[row][6].is_empty():
+                        piece.right_rook = left_rook
+                        initial = Square(row, 7)
+                        final = Square(row, 5)
+                        move = Move(initial, final)
+                        left_rook.add_move(move)
+
+                        piece.right_rook = left_rook
+                        initial = Square(row, col)
+                        final = Square(row, 6)
+                        move = Move(initial, final)
+                        piece.add_move(move)
 
         if piece.name == 'pawn':
             pawn_moves(piece, row, col)
